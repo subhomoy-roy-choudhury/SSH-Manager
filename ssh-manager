@@ -1,0 +1,173 @@
+#!/bin/bash
+
+############### References ##############
+
+# https://www.cyberciti.biz/faq/bash-get-basename-of-filename-or-directory-name/
+
+#########################################
+
+login_user=$(whoami);
+doc_path="/home/${login_user}/Documents/SSH-Manager";
+
+# source process.sh
+# source choose-from-menu.sh
+# source exec-ssh.sh
+
+function choose_from_menu() {
+    local prompt="$1" outvar="$2"
+    shift
+    shift
+    local options=("$@") cur=0 count=${#options[@]} index=0
+    local esc=$(echo -en "\e") # cache ESC as test doesn't allow esc codes
+    printf "$prompt\n"
+    while true
+    do
+        # list all options (option list is zero-based)
+        index=0 
+        for o in "${options[@]}"
+        do
+            if [ "$index" == "$cur" ]
+            then echo -e " >\e[7m$o\e[0m" # mark & highlight the current option
+            else echo "  $o"
+            fi
+            index=$(( $index + 1 ))
+        done
+        read -s -n3 key # wait for user to key in arrows or ENTER
+        if [[ $key == $esc[A ]] # up arrow
+        then cur=$(( $cur - 1 ))
+            [ "$cur" -lt 0 ] && cur=0
+        elif [[ $key == $esc[B ]] # down arrow
+        then cur=$(( $cur + 1 ))
+            [ "$cur" -ge $count ] && cur=$(( $count - 1 ))
+        elif [[ $key == "" ]] # nothing, i.e the read delimiter - ENTER
+        then break
+        fi
+        echo -en "\e[${count}A" # go up to the beginning to re-render
+    done
+    # export the selection to the requested output variable
+    printf -v $outvar "${options[$cur]}"
+}
+
+function insert_ssh_cred() {
+  export title=${1}
+  export username=${2};
+  export ipaddr=${3}
+  export ssh_key=${4}
+  rm -f ${doc_path}/ssh-list/${title}.yml ${doc_path}/temp.yml
+  rm -f temp.yml
+  ( 
+    echo "cat <<EOF >>${doc_path}/ssh-list/${title}.yml";
+    cat ${doc_path}/template.yml;
+    # echo "EOF";
+  ) >${doc_path}/temp.yml
+  . ${doc_path}/temp.yml
+  # cat ssh-list/${title}.yml
+}
+
+function exec_ssh() {
+    
+    export create_key="Create an SSH Instance";
+
+    if [[ $create_key == $selected_choice ]];
+        then 
+            echo Write the Title
+            read title
+            echo Write the Username
+            read username
+            echo Write the IP Address
+            read ipaddr
+            echo Write the SSH Key Path
+            export pem_list=();
+            for FILE in $(ls ${doc_path}/pem-list);
+                do 
+                    export filename=$(basename "$FILE");
+                    pem_list+=(${filename});
+            done
+            pem_list+=("Add New PEM File")
+            choose_from_menu "Please make a choice:" selected_pem "${pem_list[@]}"
+            echo "Selected choice: $selected_pem"
+
+            if [[ "${selected_pem}" == "Add New PEM File" ]];
+                then
+                    echo "Write the PEM Filepath";
+                    read pem_path;
+
+                    cp "${pem_path}" ${doc_path}/pem-list
+                    export ssh_key=$(basename "${pem_path}")
+            else
+                export ssh_key=$selected_pem;
+
+            fi
+
+            echo $title $username $ipaddr $ssh_key
+
+            insert_ssh_cred $title $username $ipaddr $ssh_key
+    
+    elif [[ "${selected_choice}"=="EXIT" ]]
+        then 
+            exit 0;
+
+    else
+        for FILE in $(ls -d ${doc_path}/ssh-list/*);
+            do 
+                echo $FILE;
+                export filename=$(basename "$FILE");
+                export title=${filename%.*}
+                echo $title
+
+                if [ "${title}" ==  "${selected_choice}" ]; 
+                    then        
+                        export username=$(yq e ".${title}.username" ${FILE});
+                        export ipaddr=$(yq e ".${title}.ipaddr" ${FILE});
+                        export ssh_key=$(yq e ".${title}.ssh_key" ${FILE});
+
+                        export ipaddr
+
+                        echo sudo ssh -i ${ssh_key} ${username}@${ipaddr}
+
+                        if [ "${ssh_key}" == "" ];
+                            then
+                                sudo ssh $username@$ipaddr
+                        else
+                            sudo ssh -i "${doc_path}/pem-list/${ssh_key}" $username@$ipaddr
+                        fi
+                fi
+        done
+
+    fi
+}
+
+# Main Task
+
+while :
+do
+    clear
+    echo "
+    
+    ███████ ███████ ██   ██     ███    ███  █████  ███    ██  █████   ██████  ███████ ██████  
+    ██      ██      ██   ██     ████  ████ ██   ██ ████   ██ ██   ██ ██       ██      ██   ██ 
+    ███████ ███████ ███████     ██ ████ ██ ███████ ██ ██  ██ ███████ ██   ███ █████   ██████  
+         ██      ██ ██   ██     ██  ██  ██ ██   ██ ██  ██ ██ ██   ██ ██    ██ ██      ██   ██ 
+    ███████ ███████ ██   ██     ██      ██ ██   ██ ██   ████ ██   ██  ██████  ███████ ██   ██ 
+    
+    "
+	export file_list=();
+    for FILE in $(ls ${doc_path}/ssh-list);
+        do
+            # echo $FILE
+            export filename=$(basename "$FILE");
+            export title=${filename%.*};
+            # echo "${title}"
+            file_list+=(${title})
+
+    done
+    file_list+=("Create an SSH Instance" "EXIT")
+
+    echo $file_list
+
+    choose_from_menu "Please make a choice:" selected_choice "${file_list[@]}"
+    echo "Selected choice: $selected_choice"
+
+    exec_ssh $selected_choice
+
+done
