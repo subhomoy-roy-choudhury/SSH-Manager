@@ -68,7 +68,7 @@ function exec_ssh() {
     
     export create_key="Create an SSH Instance";
 
-    if [[ $create_key == $selected_choice ]];
+    if [[ $create_key == $selected_choice ]]
         then 
             echo Write the Title
             read title
@@ -103,9 +103,10 @@ function exec_ssh() {
 
             insert_ssh_cred $title $username $ipaddr $ssh_key
     
-    elif [[ "${selected_choice}"=="EXIT" ]]
+    elif [ $selected_choice -eq "EXIT" ];
         then 
-            exit 0;
+            echo $selected_choice;
+            exit
 
     else
         for FILE in $(ls -d ${doc_path}/ssh-list/*);
@@ -142,15 +143,7 @@ function exec_ssh() {
 while :
 do
     clear
-    echo "
-    
-    ███████ ███████ ██   ██     ███    ███  █████  ███    ██  █████   ██████  ███████ ██████  
-    ██      ██      ██   ██     ████  ████ ██   ██ ████   ██ ██   ██ ██       ██      ██   ██ 
-    ███████ ███████ ███████     ██ ████ ██ ███████ ██ ██  ██ ███████ ██   ███ █████   ██████  
-         ██      ██ ██   ██     ██  ██  ██ ██   ██ ██  ██ ██ ██   ██ ██    ██ ██      ██   ██ 
-    ███████ ███████ ██   ██     ██      ██ ██   ██ ██   ████ ██   ██  ██████  ███████ ██   ██ 
-    
-    "
+    figlet -c SSH Manger
 	export file_list=();
     for FILE in $(ls ${doc_path}/ssh-list);
         do

@@ -1,12 +1,11 @@
 #!/bin/bash  
  
-# value=$(tr '\n' ' ' < apt-dependencies.txt)
-# echo "$value"  
-# echo "Start Installation"
-# # echo "sudo apt-get install $value"
-# sudo apt-get -y install $value
-
+value=$(tr '\n' ' ' < apt-dependencies.txt)
+echo "$value"  
 sudo apt-get -y update
+echo "Start Installation"
+# echo "sudo apt-get install $value"
+sudo apt-get -y install $value
 
 echo "Installing yq"
 
