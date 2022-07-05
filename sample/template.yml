@@ -1,0 +1,5 @@
+${title}:
+  username : ${username}
+  ipaddr : ${ipaddr}
+  ssh_key : ${ssh_key}
+

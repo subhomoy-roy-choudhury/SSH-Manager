@@ -18,7 +18,10 @@ yq --version
 login_user=$(whoami);
 doc_path="/home/${login_user}/Documents/SSH-Manager";
 mkdir $doc_path;
+
+# contains PEM files
 mkdir "${doc_path}/pem-list"
+# contains SSH YAML files
 mkdir "${doc_path}/ssh-list"
 
 echo '${title}:

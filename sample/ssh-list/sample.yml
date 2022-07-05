@@ -1,0 +1,4 @@
+thor-ai:
+  username : 'thor-ai' # login username
+  ipaddr : '192.168.0.120' # IP Address of remote server
+  ssh_key : '' # PEM key path if exists

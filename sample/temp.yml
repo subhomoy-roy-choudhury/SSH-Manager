@@ -1,0 +1,6 @@
+cat <<EOF >>/home/thorai/Documents/SSH-Manager/ssh-list/prod-sbnri.pem.yml
+${title}:
+  username : ${username}
+  ipaddr : ${ipaddr}
+  ssh_key : ${ssh_key}
+
